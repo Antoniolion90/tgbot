@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from aiogram.dispatcher.filters import Regexp
 from aiogram.types import CallbackQuery, LabeledPrice, ContentType, PreCheckoutQuery, Message
 
 from data import config
@@ -35,7 +36,9 @@ async def process_successful_payment(message: Message):
 
 @dp.pre_checkout_query_handler(process_pre_checkout_query)
 @dp.message_handler(process_successful_payment, content_types=ContentType.SUCCESSFUL_PAYMENT)
-@dp.callback_query_handler(i18n_text='PAYMENT_SERVICE')
+
+
+@dp.callback_query_handler(Regexp('PAYMENT_SERVICE_'))
 async def _change_payment_markup(callback_query: CallbackQuery):
 
     await callback_query.message.edit_reply_markup(reply_markup=None)
@@ -46,7 +49,12 @@ async def _change_payment_markup(callback_query: CallbackQuery):
         amount = (serv.total_sum) * 100
 
     currency = "rub"
-    foto_url = 'https://uzairports.com/assets/front/img/CIPTAS.png'
+    foto_url = 'https://i.pinimg.com/736x/5d/b1/7a/5db17ab1f8e0bad184cf9a879b46aaa3.jpg'
+
+    PRICES = [
+        LabeledPrice(label='Заказ', amount=4200000),
+        LabeledPrice(label='Доставка', amount=30000)
+    ]
 
     await callback_query.bot.send_invoice(chat_id=callback_query.from_user.id,
                                           title=title,
@@ -54,12 +62,12 @@ async def _change_payment_markup(callback_query: CallbackQuery):
                                           payload=str(idService),
                                           start_parameter='service-uzair-pay',
                                           currency=currency,
-                                          prices=[LabeledPrice(label=title, amount=amount)],
+                                          prices=PRICES,
                                           photo_url=foto_url,
                                           provider_token=config.PAYMENT_TOKEN,
-                                          need_name=False,
+                                          need_name=True,
                                           need_phone_number=True,
-                                          need_email=True,
+                                          need_email=False,
                                           need_shipping_address=False,
                                           )
 

@@ -29,7 +29,7 @@ async def _web_app(message: Message, user: User):
     data = {
         'products': json.dumps(products),
         'price': total,
-        'user_id': 1,
+        'user_id': message.from_user.id,
         'address': address,
         'address_price': price_dostavka,
     }
