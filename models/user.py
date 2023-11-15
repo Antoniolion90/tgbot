@@ -9,7 +9,7 @@ class User(BaseModel):
     id = BigIntegerField(primary_key=True)
     name = CharField(default=None)
     username = CharField(default=None, null=True)
-    language = CharField(default='en')
+    language = CharField(default='ru')
 
     is_admin = BooleanField(default=False)
 
@@ -19,4 +19,4 @@ class User(BaseModel):
         return f'<User {self.username}>'
 
     class Meta:
-        table_name = 'users'
+        table_name = 'users_bot'

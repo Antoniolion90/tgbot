@@ -1,11 +1,11 @@
-
 import json
-import requests
 
 from aiogram.types import Message, ContentType
 
+from bot.keyboards.inline import get_continue_buy
 from loader import dp
-from models import User
+from models import User, OrderBuy
+
 
 @dp.message_handler(content_types=[ContentType.WEB_APP_DATA])
 async def _web_app(message: Message, user: User):
@@ -26,18 +26,9 @@ async def _web_app(message: Message, user: User):
 
     text = f'Вы выбрали:\n' + str(res_list) + 'Итого к оплате: ' + str(total+price_dostavka) + ' руб.'
 
-    data = {
-        'products': json.dumps(products),
-        'price': total,
-        'user_id': message.from_user.id,
-        'address': address,
-        'address_price': price_dostavka,
-    }
+    orders = OrderBuy.create(user_id=message.from_user.id, products=products, price=total,
+                                address=address, address_price=price_dostavka)
 
-    print(data)
-    headers = {'Content-Type': 'application/json'}
+    id_orders = orders.id
 
-    response = requests.post('http://127.0.0.1:8000/api/orders', json=data, headers=headers)
-    print(response)
-
-    await message.answer(text)
+    await message.answer(text, reply_markup=get_continue_buy(id_orders))
