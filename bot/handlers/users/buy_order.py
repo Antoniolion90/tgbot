@@ -5,6 +5,7 @@ from aiogram.types import CallbackQuery, LabeledPrice, ContentType, PreCheckoutQ
 
 from data import config
 from loader import dp, _, bot
+from models import OrderBuy
 
 
 async def process_pre_checkout_query(pre_checkout_query: PreCheckoutQuery):
@@ -38,28 +39,42 @@ async def process_successful_payment(message: Message):
 @dp.message_handler(process_successful_payment, content_types=ContentType.SUCCESSFUL_PAYMENT)
 
 
-@dp.callback_query_handler(Regexp('PAYMENT_SERVICE_'))
+@dp.callback_query_handler(Regexp('PAYMENT_ORDER_'))
 async def _change_payment_markup(callback_query: CallbackQuery):
+    code = callback_query.data[14:]
+
+    order = OrderBuy.select().where(OrderBuy.id==code)
+
+    res_list = ''
+    total = 0
+
+    for res in order:
+        for prod in res.products:
+            for ord in prod:
+                res_list = res_list + ord["title"] + '. Кол-во: ' + str(ord["qty"]) + '\n'
+                total = int(total) + int(ord["price"]) * int(ord["qty"])
+
+    for res in order:
+        address = res.address
+        res_list = res_list + 'Доставка: ' + address + '\n'
+        price_dostavka = int(res.address_price)
+
+    print(total, res_list, price_dostavka)
 
     await callback_query.message.edit_reply_markup(reply_markup=None)
-
-    for serv in services:
-        title = serv.service
-        description = serv.info_reys
-        amount = (serv.total_sum) * 100
 
     currency = "rub"
     foto_url = 'https://i.pinimg.com/736x/5d/b1/7a/5db17ab1f8e0bad184cf9a879b46aaa3.jpg'
 
     PRICES = [
-        LabeledPrice(label='Заказ', amount=4200000),
-        LabeledPrice(label='Доставка', amount=30000)
+        LabeledPrice(label='Заказ', amount=total*10),
+        LabeledPrice(label='Доставка', amount=price_dostavka*100)
     ]
 
     await callback_query.bot.send_invoice(chat_id=callback_query.from_user.id,
-                                          title=title,
-                                          description=description,
-                                          payload=str(idService),
+                                          title='Оформление заказа',
+                                          description=res_list,
+                                          payload=str(code),
                                           start_parameter='service-uzair-pay',
                                           currency=currency,
                                           prices=PRICES,
